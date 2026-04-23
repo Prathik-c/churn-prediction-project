@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Churn Prediction</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <div class="card">
+      <header class="card-header">
+        <h1>Customer Churn Prediction</h1>
+      </header>
+
+      <form id="prediction-form" class="form-grid">
+        <label>
+          Tenure (months)
+          <input type="number" id="tenure" min="0" step="1" placeholder="12" required />
+        </label>
+
+        <label>
+          Monthly Charges
+          <input type="number" id="monthlycharges" min="0" step="0.01" placeholder="70" required />
+        </label>
+
+        <label>
+          Total Charges
+          <input type="number" id="totalcharges" min="0" step="0.01" placeholder="800" required />
+        </label>
+
+        <label>
+          Contract
+          <select id="contract" required>
+            <option value="">Select contract</option>
+            <option value="0">Month-to-month</option>
+            <option value="1">One year</option>
+            <option value="2">Two year</option>
+          </select>
+        </label>
+
+        <label>
+          Fiber Optic Service
+          <select id="svc_fiber_optic" required>
+            <option value="">Select option</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <label>
+          Pay Electronic Check
+          <select id="pay_electronic_check" required>
+            <option value="">Select option</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <label>
+          Paperless Billing
+          <select id="paperlessbilling" required>
+            <option value="">Select option</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <label>
+          Online Security
+          <select id="onlinesecurity" required>
+            <option value="">Select option</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <label>
+          Tech Support
+          <select id="techsupport" required>
+            <option value="">Select option</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <div class="action-row">
+          <button type="submit" id="predict-button">Predict Churn</button>
+        </div>
+      </form>
+
+      <div id="feedback" class="feedback hidden"></div>
+      <div id="loading" class="loading hidden">Predicting…</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
