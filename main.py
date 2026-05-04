@@ -5,7 +5,7 @@ import pickle
 import pandas as pd
 
 # Load the model at startup
-MODEL_PATH = "decision_tree_model .pkl"
+MODEL_PATH = "decision_tree_model.pkl"
 
 try:
     with open(MODEL_PATH, "rb") as f:
@@ -63,4 +63,4 @@ def predict_churn(request: ChurnPredictRequest):
     prediction = model.predict(data)[0]
     
     # Return response
-    return {"churn_prediction": int(prediction)}
+    return {"churn": int(prediction)}
