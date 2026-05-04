@@ -1,95 +1,71 @@
-// Select DOM elements once, so we can use them throughout the script.
-const form = document.getElementById("prediction-form");
-const feedback = document.getElementById("feedback");
-const loading = document.getElementById("loading");
-const predictButton = document.getElementById("predict-button");
+// Get the form element
+const form = document.getElementById('churnForm');
 
-// Base API endpoint for the prediction request.
-const API_URL = "http://127.0.0.1:8000/predict";
+// Add submit event listener
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-// Show a temporary message to the user.
-function showFeedback(message, type) {
-  feedback.textContent = message;
-  feedback.className = `feedback ${type}`;
-  feedback.classList.remove("hidden");
-}
+    // Collect form data
+    const formData = new FormData(form);
 
-// Hide the feedback area after a new request.
-function hideFeedback() {
-  feedback.classList.add("hidden");
-}
+    // Get values
+    const age = parseFloat(formData.get('age'));
+    const gender = parseInt(formData.get('gender'));
+    const tenure = parseFloat(formData.get('tenure'));
+    const usage_frequency = parseFloat(formData.get('usage_frequency'));
+    const support_calls = parseFloat(formData.get('support_calls'));
+    const payment_delay = parseFloat(formData.get('payment_delay'));
+    const total_spend = parseFloat(formData.get('total_spend'));
+    const last_interaction = parseFloat(formData.get('last_interaction'));
 
-// Show or hide the loading indicator while waiting for the response.
-function setLoading(isLoading) {
-  loading.classList.toggle("hidden", !isLoading);
-  predictButton.disabled = isLoading;
-}
+    // Subscription type
+    const subscription = formData.get('subscription');
+    const sub_premium = subscription === 'premium' ? 1 : 0;
+    const sub_standard = subscription === 'standard' ? 1 : 0;
 
-// Validate that every input field has a value before calling the API.
-function validateInputs(formData) {
-  for (const [key, value] of formData.entries()) {
-    if (!value) {
-      showFeedback(`Please enter a valid value for ${key}.`, "error");
-      return false;
+    // Contract length
+    const contract = formData.get('contract');
+    const con_monthly = contract === 'monthly' ? 1 : 0;
+    const con_quarterly = contract === 'quarterly' ? 1 : 0;
+
+    // Prepare payload
+    const payload = {
+        age,
+        gender,
+        tenure,
+        usage_frequency,
+        support_calls,
+        payment_delay,
+        total_spend,
+        last_interaction,
+        sub_premium,
+        sub_standard,
+        con_monthly,
+        con_quarterly
+    };
+
+    try {
+        // Send POST request
+        const response = await fetch('http://127.0.0.1:8000/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+
+        // Display result
+        const predictionResult = document.getElementById('predictionResult');
+        predictionResult.textContent = Churn Prediction: ;
+    } catch (error) {
+        // Handle errors
+        const predictionResult = document.getElementById('predictionResult');
+        predictionResult.textContent = Error: ;
     }
-  }
-  return true;
-}
-
-// Build the request payload from the form values.
-function buildPayload(formData) {
-  return {
-    contract: Number(formData.get("contract")),
-    tenure: Number(formData.get("tenure")),
-    svc_fiber_optic: Number(formData.get("svc_fiber_optic")),
-    pay_electronic_check: Number(formData.get("pay_electronic_check")),
-    totalcharges: Number(formData.get("totalcharges")),
-    monthlycharges: Number(formData.get("monthlycharges")),
-    paperlessbilling: Number(formData.get("paperlessbilling")),
-    onlinesecurity: Number(formData.get("onlinesecurity")),
-    techsupport: Number(formData.get("techsupport")),
-  };
-}
-
-// Handle the form submit event and send the data to the API.
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  hideFeedback();
-
-  const formData = new FormData(form);
-
-  if (!validateInputs(formData)) {
-    return;
-  }
-
-  const payload = buildPayload(formData);
-
-  setLoading(true);
-
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      const message = errorBody?.detail || "API request failed.";
-      showFeedback(`Error: ${message}`, "error");
-      return;
-    }
-
-    const result = await response.json();
-    const isChurn = result.prediction === 1;
-    const text = isChurn ? "Churn" : "No Churn";
-
-    showFeedback(text, isChurn ? "churn" : "no-churn");
-  } catch (error) {
-    showFeedback(`Unable to reach the API: ${error.message}`, "error");
-  } finally {
-    setLoading(false);
-  }
 });

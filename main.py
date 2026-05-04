@@ -1,13 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import pickle
 import pandas as pd
 
-# -------------------------------
-# Load Model
-# -------------------------------
-MODEL_PATH = "decision_tree_best_features_model.pkl"
+# Load the model at startup
+MODEL_PATH = "decision_tree_model .pkl"
 
 try:
     with open(MODEL_PATH, "rb") as f:
@@ -15,11 +13,10 @@ try:
 except Exception as e:
     raise RuntimeError(f"Error loading model: {e}")
 
-# -------------------------------
-# App Init
-# -------------------------------
-app = FastAPI(title="Churn Prediction API")
+# Initialize FastAPI app
+app = FastAPI(title="Customer Churn Prediction API")
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,75 +25,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------------------------------
-# Selected features used by the model
-# -------------------------------
-best_features = [
-    "contract",
-    "tenure",
-    "svc_fiber_optic",
-    "pay_electronic_check",
-    "totalcharges",
-    "monthlycharges",
-    "paperlessbilling",
-    "onlinesecurity",
-    "techsupport",
-]
+# Define Pydantic input model
+class ChurnPredictRequest(BaseModel):
+    age: float
+    gender: int  # 0 for Female, 1 for Male
+    tenure: float
+    usage_frequency: float
+    support_calls: float
+    payment_delay: float
+    total_spend: float
+    last_interaction: float
+    sub_premium: int  # 1 if Subscription Type is 'premium', 0 otherwise
+    sub_standard: int  # 1 if Subscription Type is 'standard', 0 otherwise
+    con_monthly: int  # 1 if Contract Length is 'monthly', 0 otherwise
+    con_quarterly: int  # 1 if Contract Length is 'quarterly', 0 otherwise
 
-# -------------------------------
-# Input Schema
-# -------------------------------
-class Customer(BaseModel):
-    contract: int = Field(..., ge=0, le=2, description="Contract type encoded as an integer")
-    tenure: float = Field(..., ge=0, description="Customer tenure in months")
-    svc_fiber_optic: int = Field(..., ge=0, le=1, description="Service type fiber optic encoded as 0 or 1")
-    pay_electronic_check: int = Field(..., ge=0, le=1, description="Payment method electronic check encoded as 0 or 1")
-    totalcharges: float = Field(..., ge=0, description="Total charges")
-    monthlycharges: float = Field(..., ge=0, description="Monthly charges")
-    paperlessbilling: int = Field(..., ge=0, le=1, description="Paperless billing encoded as 0 or 1")
-    onlinesecurity: int = Field(..., ge=0, le=1, description="Online security service encoded as 0 or 1")
-    techsupport: int = Field(..., ge=0, le=1, description="Tech support service encoded as 0 or 1")
-
-# -------------------------------
-# Root
-# -------------------------------
+# Root endpoint
 @app.get("/")
-def home():
-    return {"message": "API is running"}
+def read_root():
+    return {"message": "Welcome to the Customer Churn Prediction API"}
 
-# -------------------------------
-# Predict
-# -------------------------------
+# Prediction endpoint
 @app.post("/predict")
-def predict(data: Customer):
-    try:
-        # Convert to DataFrame using the selected best features.
-        # The model requires exactly these columns in the same order.
-        input_df = pd.DataFrame([
-            {
-                "contract": data.contract,
-                "tenure": data.tenure,
-                "svc_fiber_optic": data.svc_fiber_optic,
-                "pay_electronic_check": data.pay_electronic_check,
-                "totalcharges": data.totalcharges,
-                "monthlycharges": data.monthlycharges,
-                "paperlessbilling": data.paperlessbilling,
-                "onlinesecurity": data.onlinesecurity,
-                "techsupport": data.techsupport,
-            }
-        ], columns=best_features)
-
-        # Debug (optional)
-        # print("Model expects:", model.feature_names_in_)
-
-        prediction = model.predict(input_df)[0]
-
-        result = "Churn" if int(prediction) == 1 else "No Churn"
-
-        return {
-            "prediction": int(prediction),
-            "result": result
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+def predict_churn(request: ChurnPredictRequest):
+    # Convert request to DataFrame
+    data = pd.DataFrame([request.dict()])
+    
+    # Ensure the order matches the model's training order
+    feature_order = [
+        'age', 'gender', 'tenure', 'usage_frequency', 'support_calls',
+        'payment_delay', 'total_spend', 'last_interaction', 'sub_premium',
+        'sub_standard', 'con_monthly', 'con_quarterly'
+    ]
+    data = data[feature_order]
+    
+    # Make prediction
+    prediction = model.predict(data)[0]
+    
+    # Return response
+    return {"churn_prediction": int(prediction)}
